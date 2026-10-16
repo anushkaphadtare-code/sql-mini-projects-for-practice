@@ -148,21 +148,35 @@ During the inspection and profiling phase, the following SQL concepts were used:
 - `LEN` and `DATALENGTH` for investigating string formatting
 - Data type validation and range checks
 
-## Current Status
+## Data Cleaning and Transformation
 
-**Completed:**
-- Imported the CSV dataset into SQL Server.
-- Preserved the original raw table.
-- Inspected all nine columns individually.
-- Identified missing-value representations, inconsistent labels, and potential standardization requirements.
-- Checked numeric ranges and date convertibility.
+### Silver Layer — `dbo.layoffs_clean`
 
-**Next steps:**
-1. Create a separate clean table with appropriate data types.
-2. Standardize missing values and inconsistent labels.
-3. Apply transformations without modifying the raw table.
-4. Validate the cleaned data by checking row counts, data types, missing values, and remaining inconsistencies.
-5. Prepare the clean dataset for exploratory data analysis.
+Performed data cleaning and standardization on the raw layoffs dataset while preserving the original data in `dbo.layoffs_raw`.
+
+- Removed leading and trailing whitespace from text values using `TRIM()`.
+- Standardized inconsistent categorical values, including `CryptoCurrency` to `Crypto Currency`.
+- Standardized location names, including `Malmö` to `Malmo` and `Düsseldorf` to `Dusseldorf`.
+- Standardized `United States.` to `United States`.
+- Converted text `'NULL'` markers into actual SQL `NULL` values where appropriate.
+- Converted columns to appropriate data types using `TRY_CONVERT()` and explicit column definitions:
+  - `total_laid_off` → `INT`
+  - `percentage_laid_off` → `DECIMAL(5,4)`
+  - `date` → `DATE`
+  - `funds_raised_millions` → `DECIMAL(18,2)`
+- Preserved missing numeric values and dates as `NULL` instead of replacing them with zero or inventing values.
+
+### Gold Layer — `dbo.layoffs_gold`
+
+Applied reporting-oriented transformations to the cleaned Silver data.
+
+- Replaced missing `industry` values with `'Unknown'`.
+- Replaced missing `stage` values with `'Unknown'`.
+- Preserved existing `'Unknown'` stage values.
+- Retained `NULL` values in `total_laid_off`, `percentage_laid_off`, `date`, and `funds_raised_millions` where information was unavailable, avoiding misleading assumptions.
+- Maintained the same column structure and data types as the Silver table.
+
+**Data flow:** `dbo.layoffs_raw` → `dbo.layoffs_clean` → `dbo.layoffs_gold`
 
 ## Project Objective
 
